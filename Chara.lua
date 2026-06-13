@@ -1,9 +1,21 @@
-writefile("CharaULT.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/CharaULT.mp3"))
-writefile("CharaALT.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/CharaALT.mp3"))
-writefile("CHARA.rbxmx", game:HttpGet("https://github.com/ian49972/RBXMS/raw/refs/heads/main/CHARA.rbxmx"))
-writefile("Reset.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/Reset.mp3"))
-writefile("Atonement.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/Atonement.mp3"))
-writefile("DeathCharge.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/DeathCharge.mp3"))
+pcall(function()
+	writefile("CharaULT.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/CharaULT.mp3"))
+end)
+pcall(function()
+	writefile("CharaALT.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/CharaALT.mp3"))
+end)
+pcall(function()
+	writefile("CHARA.rbxmx", game:HttpGet("https://github.com/ian49972/RBXMS/raw/refs/heads/main/CHARA.rbxmx"))
+end)
+pcall(function()
+	writefile("Reset.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/Reset.mp3"))
+end)
+pcall(function()
+	writefile("Atonement.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/Atonement.mp3"))
+end)
+pcall(function()
+	writefile("DeathCharge.mp3", game:HttpGet("https://github.com/ian49972/smth/raw/refs/heads/main/DeathCharge.mp3"))
+end)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -21,36 +33,41 @@ local humanoid = character:WaitForChild("Humanoid")
 local backpack = player:WaitForChild("Backpack")
 
 -- CREATE REMOTE EVENT FOR MULTIPLAYER SYNC
-local RemoteEvent = Instance.new("RemoteEvent")
-RemoteEvent.Name = "CharaAnimationSync"
-RemoteEvent.Parent = ReplicatedStorage
+local RemoteEvent = ReplicatedStorage:FindFirstChild("CharaAnimationSync")
+if not RemoteEvent then
+	RemoteEvent = Instance.new("RemoteEvent")
+	RemoteEvent.Name = "CharaAnimationSync"
+	RemoteEvent.Parent = ReplicatedStorage
+end
 
 local tool = Instance.new("Tool")
 tool.Name = "Awakening"
 tool.RequiresHandle = false
 tool.Parent = backpack
 
+print("[CHARA] Loading assets...")
+
 local assets = game:GetObjects(getcustomasset("CHARA.rbxmx"))[1]
-local cameraModel = assets:WaitForChild("Camera")
+local cameraModel = assets:WaitForChild("Camera"):Clone()
 local cameraPart = cameraModel:WaitForChild("camera")
 local cameraKfs = assets:WaitForChild("camera")
 local cameraKfs2 = assets:WaitForChild("camera2")
 local playerKfs = assets:WaitForChild("player")
 local playerKfs2 = assets:WaitForChild("player2")
 local assetsFolder = assets:WaitForChild("Assets")
-local torsoAttach = assetsFolder:WaitForChild("torso")
-local auraPart = assetsFolder:WaitForChild("aura")
-local eyeAttach = assetsFolder:WaitForChild("eye")
-local knifeModel = assets:WaitForChild("Knife")
-local heart2Model = assets:WaitForChild("Heart2")
-local atonementCamModel = assets:WaitForChild("AtonementCam")
+local torsoAttach = assetsFolder:WaitForChild("torso"):Clone()
+local auraPart = assetsFolder:WaitForChild("aura"):Clone()
+local eyeAttach = assetsFolder:WaitForChild("eye"):Clone()
+local knifeModel = assets:WaitForChild("Knife"):Clone()
+local heart2Model = assets:WaitForChild("Heart2"):Clone()
+local atonementCamModel = assets:WaitForChild("AtonementCam"):Clone()
 local atonementHit = assets:WaitForChild("Keyframes"):WaitForChild("AtonementHit")
 local atonementVictim = assets:WaitForChild("Keyframes"):WaitForChild("AntonementHitVictim")
 local deathCharge = assets:WaitForChild("Keyframes"):WaitForChild("DeathCharge")
 local deathChargeVictim = assets:WaitForChild("Keyframes"):WaitForChild("DeathChargeVictim")
 local deathChargeCam = assets:WaitForChild("Keyframes"):WaitForChild("DeathChargeCam")
 
-local Heart = game:GetObjects("rbxassetid://5045128262")[1]
+local Heart = game:GetObjects("rbxassetid://5045128262")[1]:Clone()
 
 local camera = Workspace.CurrentCamera
 local originalCameraType = camera.CameraType
@@ -75,12 +92,22 @@ charaImage.ImageTransparency = 1
 charaImage.Image = "rbxassetid://14446502063"
 charaImage.Parent = screenGui
 
-local Object = game:GetObjects("rbxassetid://74714833540240")[1]
-Object.Parent = workspace
+pcall(function()
+	local Object = game:GetObjects("rbxassetid://74714833540240")[1]
+	Object.Parent = workspace
+end)
 
-local DialogueGui = Object.CUSTOM_DIALOGUE
+local DialogueGui = workspace:FindFirstChild("CUSTOM_DIALOGUE")
+if DialogueGui then
+	DialogueGui = DialogueGui:Clone()
+else
+	DialogueGui = nil
+end
+
+print("[CHARA] Assets loaded!")
 
 local function getColor(timeLength, points)
+	if not points or #points == 0 then return Color3.new(1,1,1) end
 	local data1 = points[1]
 	local allPoints = points[#points]
 	for i = 1, #points - 1 do
@@ -109,6 +136,7 @@ local function EndDialogue(gui)
 end
 
 local function CreateDialogue(data, displayName)
+	if not DialogueGui then return end
 	displayName = player.Name
 	local DialogueUI = DialogueGui:Clone()
 	local posY = 0
@@ -250,8 +278,9 @@ local function SetKnifeVisible(visible)
 			mesh.Transparency = transparency
 		end
 	end
-	-- BROADCAST TO OTHER PLAYERS
-	RemoteEvent:FireAllClients("SetKnifeVisible", player.Name, transparency)
+	pcall(function()
+		RemoteEvent:FireAllClients("SetKnifeVisible", player.Name, transparency)
+	end)
 end
 
 local function SetCamKnifeVisible(visible)
@@ -422,51 +451,56 @@ function PlayKeyframeSequence(Model, KeyFrameSequence, SpeedMult)
 end
 
 -- LISTEN FOR ANIMATIONS FROM OTHER PLAYERS
-RemoteEvent.OnClientEvent:Connect(function(action, playerName, ...)
-	if action == "PlayAwakening" then
-		local targetPlayer = Players:FindFirstChild(playerName)
-		if targetPlayer and targetPlayer.Character then
-			local targetChar = targetPlayer.Character
-			local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
-			if targetHrp then
-				targetHrp.Anchored = true
-				local isSpecial = ({...})[1]
-				local targetKnifeModel = targetChar:FindFirstChild("Knife")
-				if targetKnifeModel then
-					for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
-						if mesh:IsA("MeshPart") or mesh:IsA("Part") then
-							mesh.Transparency = 0
-						end
-					end
-				end
-				task.delay(({...})[2] or 15, function()
-					targetHrp.Anchored = false
+pcall(function()
+	RemoteEvent.OnClientEvent:Connect(function(action, playerName, ...)
+		if action == "PlayAwakening" then
+			local targetPlayer = Players:FindFirstChild(playerName)
+			if targetPlayer and targetPlayer.Character then
+				local targetChar = targetPlayer.Character
+				local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+				if targetHrp then
+					targetHrp.Anchored = true
+					local isSpecial = ({...})[1]
+					local targetKnifeModel = targetChar:FindFirstChild("Knife")
 					if targetKnifeModel then
 						for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
 							if mesh:IsA("MeshPart") or mesh:IsA("Part") then
-								mesh.Transparency = 1
+								mesh.Transparency = 0
 							end
 						end
 					end
-				end)
+					task.delay(({...})[2] or 15, function()
+						targetHrp.Anchored = false
+						if targetKnifeModel then
+							for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
+								if mesh:IsA("MeshPart") or mesh:IsA("Part") then
+									mesh.Transparency = 1
+								end
+							end
+						end
+					end)
+				end
 			end
-		end
-	elseif action == "SetKnifeVisible" then
-		local targetPlayer = Players:FindFirstChild(playerName)
-		if targetPlayer and targetPlayer.Character then
-			local targetKnifeModel = targetPlayer.Character:FindFirstChild("Knife")
-			if targetKnifeModel then
-				for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
-					if mesh:IsA("MeshPart") or mesh:IsA("Part") then
-						mesh.Transparency = ...
+		elseif action == "SetKnifeVisible" then
+			local targetPlayer = Players:FindFirstChild(playerName)
+			if targetPlayer and targetPlayer.Character then
+				local targetKnifeModel = targetPlayer.Character:FindFirstChild("Knife")
+				if targetKnifeModel then
+					for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
+						if mesh:IsA("MeshPart") or mesh:IsA("Part") then
+							mesh.Transparency = ...
+						end
 					end
 				end
 			end
 		end
-	end
+	end)
 end)
 
+print("[CHARA] Script initialized! Tools created.")
+
 tool.Activated:Connect(function()
+	print("[CHARA] Awakening activated!")
 	tool:Destroy()
 	
 	local isSpecial = math.random() < 0.5
@@ -483,8 +517,9 @@ tool.Activated:Connect(function()
 	
 	hrp.Anchored = true
 	
-	-- BROADCAST TO OTHER PLAYERS
-	RemoteEvent:FireAllClients("PlayAwakening", player.Name, isSpecial, 15)
+	pcall(function()
+		RemoteEvent:FireAllClients("PlayAwakening", player.Name, isSpecial, 15)
+	end)
 	
 	cameraModel:PivotTo(hrp.CFrame)
 	cameraModel.Parent = Workspace
@@ -499,7 +534,9 @@ tool.Activated:Connect(function()
 	end)
 	
 	local sound = Instance.new("Sound")
-	sound.SoundId = getcustomasset(isSpecial and "CharaALT.mp3" or "CharaULT.mp3")
+	pcall(function()
+		sound.SoundId = getcustomasset(isSpecial and "CharaALT.mp3" or "CharaULT.mp3")
+	end)
 	sound.Volume = 1
 	sound.Parent = Workspace
 	sound:Play()
@@ -556,74 +593,32 @@ tool.Activated:Connect(function()
 			highlight.OutlineTransparency = 0
 			highlight.Parent = character
 			TweenService:Create(highlight, TweenInfo.new(2), {OutlineTransparency = 1}):Play()
-			task.delay(2, highlight.Destroy)
+			task.delay(2, function() if highlight.Parent then highlight:Destroy() end end)
 		end)
 		
 		task.delay(1.5, function()
 			local heartModel = heart2Model:Clone()
 			heartModel.Parent = Workspace
 			heartModel:PivotTo(cameraPart.CFrame * CFrame.new(0, 0, -1))
-			local determination = heartModel:FindFirstChild("Determination")
-			if determination then
-				local det1 = determination:FindFirstChild("Determination1")
-				local det2 = determination:FindFirstChild("Determination2")
-				if det1 and det2 then
-					local originalDet1CFrame = det1.CFrame
-					local originalDet2CFrame = det2.CFrame
-					det1.CFrame = originalDet1CFrame * CFrame.new(0, 0, -0.3)
-					det2.CFrame = originalDet2CFrame * CFrame.new(0, 0, 0.3)
-					local heartHighlight = Instance.new("Highlight")
-					heartHighlight.FillColor = Color3.fromRGB(255, 0, 0)
-					heartHighlight.FillTransparency = 0
-					heartHighlight.OutlineColor = Color3.new(1, 1, 1)
-					heartHighlight.OutlineTransparency = 0
-					heartHighlight.Parent = heartModel
-					task.delay(0.5, function()
-						TweenService:Create(det1, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalDet1CFrame}):Play()
-						TweenService:Create(det2, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame = originalDet2CFrame}):Play()
-					end)
-				end
-			end
 			task.delay(1.5, function()
 				if heartModel and heartModel.Parent then heartModel:Destroy() end
 			end)
 		end)
 		
 		task.delay(6, function()
-			CreateDialogue({{Text = "Imm...", TypeSpeed = 0.05, Bold = false, Italic = true, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = true, Intensity = 4, Lifetime = 0.4}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-			task.delay(1, function()
-				CreateDialogue({{Text = "Baaaaaaacck~", TypeSpeed = 0.06, Bold = false, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = true, Shake = {Enabled = true, Intensity = 1, Lifetime = 0.3}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-			end)
+			if DialogueGui then
+				CreateDialogue({{Text = "Imm...", TypeSpeed = 0.05, Bold = false, Italic = true, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = true, Intensity = 4, Lifetime = 0.4}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
+				task.delay(1, function()
+					CreateDialogue({{Text = "Baaaaaaacck~", TypeSpeed = 0.06, Bold = false, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = true, Shake = {Enabled = true, Intensity = 1, Lifetime = 0.3}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
+				end)
+			end
 		end)
 	else
 		eyeAttach.Parent = head
-		local impacto1 = eyeAttach:FindFirstChild("impacto1")
-		local otherEyeEmitter = nil
-		for _, emitter in ipairs(eyeAttach:GetDescendants()) do
-			if emitter:IsA("ParticleEmitter") and emitter.Name ~= "impacto1" then
-				otherEyeEmitter = emitter
-				break
-			end
-		end
-		if impacto1 and impacto1:IsA("ParticleEmitter") then
-			impacto1.Enabled = true
-			task.delay(0.15, function() impacto1.Enabled = false end)
-		end
-		if otherEyeEmitter then
-			otherEyeEmitter.Enabled = true
-		end
 		task.delay(2, function() if eyeAttach.Parent then eyeAttach:Destroy() end end)
 		
 		task.delay(2.7, function() TweenService:Create(charaImage, TweenInfo.new(0.5), {ImageTransparency = 0}):Play() end)
 		task.delay(10.5, function() TweenService:Create(charaImage, TweenInfo.new(0.5), {ImageTransparency = 1}):Play() end)
-		
-		task.delay(4, function() CreateDialogue({{Text = "Since", TypeSpeed = 0.03, Bold = false, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = true, Intensity = 2, Lifetime = 0.3}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-		task.delay(4.6, function() CreateDialogue({{Text = "WHEN", TypeSpeed = 0.03, Bold = true, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = true, Shake = {Enabled = true, Intensity = 3, Lifetime = 0.4}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-		task.delay(5, function() CreateDialogue({{Text = "Were you the one in control??", TypeSpeed = 0.05, Bold = false, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = true, Intensity = 2, Lifetime = 0.3}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-		task.delay(15.5, function()
-			CreateDialogue({{Text = "Now, partner.", TypeSpeed = 0.05, Bold = false, Italic = true, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = false}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-			task.delay(3.2, function() CreateDialogue({{Text = "Let us send this world back into the abyss.", TypeSpeed = 0.06, Bold = true, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = true, Intensity = 2, Lifetime = 0.3}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}}) end)
-		end)
 		
 		task.delay(10.5, function()
 			local highlight = Instance.new("Highlight")
@@ -652,30 +647,6 @@ tool.Activated:Connect(function()
 				if emitter:IsA("ParticleEmitter") then emitter.Enabled = true end
 			end
 			
-			task.delay(3, function()
-				local auraObjects = {}
-				auraPart.Parent = head
-				for _, child in ipairs(auraPart:GetChildren()) do
-					child.Parent = head
-					table.insert(auraObjects, child)
-					if child:IsA("ParticleEmitter") then child.Enabled = true end
-				end
-				for _, attach in ipairs(head:GetChildren()) do
-					if attach:IsA("Attachment") then
-						table.insert(auraObjects, attach)
-						for _, emitter in ipairs(attach:GetDescendants()) do
-							if emitter:IsA("ParticleEmitter") then emitter.Enabled = true end
-						end
-					end
-				end
-				auraPart:Destroy()
-				task.delay(animLength - 11, function()
-					for _, obj in ipairs(auraObjects) do
-						if obj and obj.Parent then obj:Destroy() end
-					end
-				end)
-			end)
-			
 			task.delay(2, function() if heartHighlight and heartHighlight.Parent then heartHighlight:Destroy() end end)
 		end)
 	end
@@ -696,7 +667,7 @@ tool.Activated:Connect(function()
 			Instance.new("Animator").Parent = humanoid
 		end
 		
-		cameraModel:Destroy()
+		if cameraModel.Parent then cameraModel:Destroy() end
 		if torsoAttach.Parent then torsoAttach:Destroy() end
 		if Heart.Parent then Heart:Destroy() end
 		
@@ -705,22 +676,17 @@ tool.Activated:Connect(function()
 		TweenService:Create(blackFrame, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
 		task.delay(0.2, function()
 			TweenService:Create(blackFrame, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
-			task.delay(0.2, function()
-				TweenService:Create(blackFrame, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
-				task.delay(0.2, function()
-					TweenService:Create(blackFrame, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
-				end)
-			end)
 		end)
 		
-		task.delay(1, function() screenGui:Destroy() end)
+		task.delay(1, function() if screenGui.Parent then screenGui:Destroy() end end)
 		
 		atonementTool.Parent = backpack
-		loadstring(game:HttpGet("https://raw.githubusercontent.com/ian49972/SCRIPTS/refs/heads/main/Reset"))()
+		print("[CHARA] Awakening finished!")
 	end)
 end)
 
 atonementTool.Activated:Connect(function()
+	print("[CHARA] Atonement activated!")
 	local hrp = character:WaitForChild("HumanoidRootPart")
 	local head = character:WaitForChild("Head")
 	local rightArm = character:WaitForChild("Right Arm")
@@ -772,7 +738,9 @@ atonementTool.Activated:Connect(function()
 	currentKnifeMotor.Parent = rightArm
 	
 	local sound = Instance.new("Sound")
-	sound.SoundId = getcustomasset("Atonement.mp3")
+	pcall(function()
+		sound.SoundId = getcustomasset("Atonement.mp3")
+	end)
 	sound.Volume = 1
 	sound.Parent = Workspace
 	sound:Play()
@@ -799,13 +767,6 @@ atonementTool.Activated:Connect(function()
 		victimAnim = PlayKeyframeSequence(victimClone, atonementVictim, 1.1)
 	end
 	
-	task.spawn(function()
-		task.wait(5)
-		if victimHead and victimHead.Parent then
-			camera.CameraSubject = victimHead
-		end
-	end)
-	
 	local firstDuration = math.max(playerAnim.getLength(), victimAnim and victimAnim.getLength() or 0)
 	
 	task.delay(firstDuration, function()
@@ -813,7 +774,9 @@ atonementTool.Activated:Connect(function()
 		if victimAnim then victimAnim.stop() end
 		
 		local deathSound = Instance.new("Sound")
-		deathSound.SoundId = getcustomasset("DeathCharge.mp3")
+		pcall(function()
+			deathSound.SoundId = getcustomasset("DeathCharge.mp3")
+		end)
 		deathSound.Volume = 1
 		deathSound.Parent = Workspace
 		deathSound:Play()
@@ -836,13 +799,6 @@ atonementTool.Activated:Connect(function()
 		local deathCamAnim = PlayKeyframeSequence(currentCamModel, deathChargeCam, 1)
 		local deathPlayerAnim = PlayKeyframeSequence(character, deathCharge, 1)
 		local deathVictimAnim = victimClone and PlayKeyframeSequence(victimClone, deathChargeVictim, 1)
-		
-		task.spawn(function()
-			task.wait(5)
-			SetCamKnifeVisible(false)
-			task.wait(3)
-			SetCamKnifeVisible(true)
-		end)
 		
 		local playerHighlight = Instance.new("Highlight")
 		playerHighlight.FillTransparency = 1
@@ -894,8 +850,12 @@ atonementTool.Activated:Connect(function()
 			if playerHighlight and playerHighlight.Parent then playerHighlight:Destroy() end
 			if colorCorrection and colorCorrection.Parent then colorCorrection:Destroy() end
 			if sky and sky.Parent then sky:Destroy() end
+			
+			print("[CHARA] Atonement finished!")
 		end)
 	end)
 end)
 
 atonementTool.Parent = backpack
+
+print("[CHARA] Script fully loaded! Use the 'Awakening' tool in your backpack!")
