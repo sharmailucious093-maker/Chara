@@ -32,12 +32,74 @@ local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid")
 local backpack = player:WaitForChild("Backpack")
 
--- CREATE REMOTE EVENT FOR MULTIPLAYER SYNC
-local RemoteEvent = ReplicatedStorage:FindFirstChild("CharaAnimationSync")
-if not RemoteEvent then
-	RemoteEvent = Instance.new("RemoteEvent")
-	RemoteEvent.Name = "CharaAnimationSync"
-	RemoteEvent.Parent = ReplicatedStorage
+-- CONNECT TO ALL PLAYERS AND SHOW THEIR ANIMATIONS
+local function ShowPlayerAnimation(targetPlayer, duration)
+	if not targetPlayer or not targetPlayer.Character then return end
+	
+	local targetChar = targetPlayer.Character
+	local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
+	
+	if targetHrp then
+		targetHrp.Anchored = true
+		local targetKnife = targetChar:FindFirstChild("Knife")
+		
+		if targetKnife then
+			for _, mesh in pairs(targetKnife:GetDescendants()) do
+				if mesh:IsA("MeshPart") or mesh:IsA("Part") then
+					mesh.Transparency = 0
+				end
+			end
+		end
+		
+		task.delay(duration, function()
+			if targetHrp and targetHrp.Parent then
+				targetHrp.Anchored = false
+			end
+			if targetKnife then
+				for _, mesh in pairs(targetKnife:GetDescendants()) do
+					if mesh:IsA("MeshPart") or mesh:IsA("Part") then
+						mesh.Transparency = 1
+					end
+				end
+			end
+		end)
+	end
+end
+
+-- MONITOR ALL PLAYERS FOR ANIMATIONS
+local activatingPlayers = {}
+
+Players.PlayerAdded:Connect(function(newPlayer)
+	newPlayer.CharacterAdded:Connect(function(newChar)
+		local tool = newChar:WaitForChild("Backpack"):WaitForChild("Awakening", 5)
+		if tool then
+			tool.Activated:Connect(function()
+				activatingPlayers[newPlayer.Name] = true
+				ShowPlayerAnimation(newPlayer, 15)
+				task.delay(15, function()
+					activatingPlayers[newPlayer.Name] = nil
+				end)
+			end)
+		end
+	end)
+end)
+
+-- WATCH EXISTING PLAYERS
+for _, p in pairs(Players:GetPlayers()) do
+	if p ~= player and p.Character then
+		task.spawn(function()
+			local tool = p.Character:FindFirstChild("Backpack"):FindFirstChild("Awakening")
+			if tool then
+				tool.Activated:Connect(function()
+					activatingPlayers[p.Name] = true
+					ShowPlayerAnimation(p, 15)
+					task.delay(15, function()
+						activatingPlayers[p.Name] = nil
+					end)
+				end)
+			end
+		end)
+	end
 end
 
 local tool = Instance.new("Tool")
@@ -278,9 +340,6 @@ local function SetKnifeVisible(visible)
 			mesh.Transparency = transparency
 		end
 	end
-	pcall(function()
-		RemoteEvent:FireAllClients("SetKnifeVisible", player.Name, transparency)
-	end)
 end
 
 local function SetCamKnifeVisible(visible)
@@ -450,57 +509,18 @@ function PlayKeyframeSequence(Model, KeyFrameSequence, SpeedMult)
 	}
 end
 
--- LISTEN FOR ANIMATIONS FROM OTHER PLAYERS
-pcall(function()
-	RemoteEvent.OnClientEvent:Connect(function(action, playerName, ...)
-		if action == "PlayAwakening" then
-			local targetPlayer = Players:FindFirstChild(playerName)
-			if targetPlayer and targetPlayer.Character then
-				local targetChar = targetPlayer.Character
-				local targetHrp = targetChar:FindFirstChild("HumanoidRootPart")
-				if targetHrp then
-					targetHrp.Anchored = true
-					local isSpecial = ({...})[1]
-					local targetKnifeModel = targetChar:FindFirstChild("Knife")
-					if targetKnifeModel then
-						for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
-							if mesh:IsA("MeshPart") or mesh:IsA("Part") then
-								mesh.Transparency = 0
-							end
-						end
-					end
-					task.delay(({...})[2] or 15, function()
-						targetHrp.Anchored = false
-						if targetKnifeModel then
-							for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
-								if mesh:IsA("MeshPart") or mesh:IsA("Part") then
-									mesh.Transparency = 1
-								end
-							end
-						end
-					end)
-				end
-			end
-		elseif action == "SetKnifeVisible" then
-			local targetPlayer = Players:FindFirstChild(playerName)
-			if targetPlayer and targetPlayer.Character then
-				local targetKnifeModel = targetPlayer.Character:FindFirstChild("Knife")
-				if targetKnifeModel then
-					for _, mesh in ipairs(targetKnifeModel:GetDescendants()) do
-						if mesh:IsA("MeshPart") or mesh:IsA("Part") then
-							mesh.Transparency = ...
-						end
-					end
-				end
-			end
-		end
-	end)
-end)
-
 print("[CHARA] Script initialized! Tools created.")
 
 tool.Activated:Connect(function()
 	print("[CHARA] Awakening activated!")
+	
+	-- NOTIFY ALL PLAYERS
+	for _, p in pairs(Players:GetPlayers()) do
+		if p ~= player then
+			ShowPlayerAnimation(p, 15)
+		end
+	end
+	
 	tool:Destroy()
 	
 	local isSpecial = math.random() < 0.5
@@ -516,10 +536,6 @@ tool.Activated:Connect(function()
 	end
 	
 	hrp.Anchored = true
-	
-	pcall(function()
-		RemoteEvent:FireAllClients("PlayAwakening", player.Name, isSpecial, 15)
-	end)
 	
 	cameraModel:PivotTo(hrp.CFrame)
 	cameraModel.Parent = Workspace
@@ -604,51 +620,12 @@ tool.Activated:Connect(function()
 				if heartModel and heartModel.Parent then heartModel:Destroy() end
 			end)
 		end)
-		
-		task.delay(6, function()
-			if DialogueGui then
-				CreateDialogue({{Text = "Imm...", TypeSpeed = 0.05, Bold = false, Italic = true, TextStrokeColor = Color3.new(0,0,0), HigherUp = false, Shake = {Enabled = true, Intensity = 4, Lifetime = 0.4}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-				task.delay(1, function()
-					CreateDialogue({{Text = "Baaaaaaacck~", TypeSpeed = 0.06, Bold = false, Italic = false, TextStrokeColor = Color3.new(0,0,0), HigherUp = true, Shake = {Enabled = true, Intensity = 1, Lifetime = 0.3}, Color = {Keypoints = {{Time = 0, Value = Color3.fromRGB(255, 0, 0)}, {Time = 1, Value = Color3.fromRGB(255, 255, 255)}}}}})
-				end)
-			end
-		end)
 	else
 		eyeAttach.Parent = head
 		task.delay(2, function() if eyeAttach.Parent then eyeAttach:Destroy() end end)
 		
 		task.delay(2.7, function() TweenService:Create(charaImage, TweenInfo.new(0.5), {ImageTransparency = 0}):Play() end)
 		task.delay(10.5, function() TweenService:Create(charaImage, TweenInfo.new(0.5), {ImageTransparency = 1}):Play() end)
-		
-		task.delay(10.5, function()
-			local highlight = Instance.new("Highlight")
-			highlight.FillTransparency = 1
-			highlight.OutlineColor = Color3.new(1, 1, 1)
-			highlight.OutlineTransparency = 0
-			highlight.Parent = character
-			
-			local heartHighlight = Instance.new("Highlight")
-			heartHighlight.FillColor = Color3.fromRGB(255, 0, 0)
-			heartHighlight.FillTransparency = 0
-			heartHighlight.OutlineColor = Color3.new(1, 1, 1)
-			heartHighlight.OutlineTransparency = 0
-			heartHighlight.Parent = Heart
-			Heart.Transparency = 0
-			
-			local tween = TweenService:Create(highlight, TweenInfo.new(5), {OutlineTransparency = 1})
-			tween:Play()
-			task.wait(4)
-			Heart.Transparency = 1
-			tween.Completed:Wait()
-			highlight:Destroy()
-			
-			torsoAttach.Parent = torso
-			for _, emitter in ipairs(torsoAttach:GetDescendants()) do
-				if emitter:IsA("ParticleEmitter") then emitter.Enabled = true end
-			end
-			
-			task.delay(2, function() if heartHighlight and heartHighlight.Parent then heartHighlight:Destroy() end end)
-		end)
 	end
 	
 	task.delay(animLength, function()
@@ -673,12 +650,7 @@ tool.Activated:Connect(function()
 		
 		SetKnifeVisible(false)
 		
-		TweenService:Create(blackFrame, TweenInfo.new(0.15), {BackgroundTransparency = 0}):Play()
-		task.delay(0.2, function()
-			TweenService:Create(blackFrame, TweenInfo.new(0.15), {BackgroundTransparency = 1}):Play()
-		end)
-		
-		task.delay(1, function() if screenGui.Parent then screenGui:Destroy() end end)
+		if screenGui.Parent then screenGui:Destroy() end
 		
 		atonementTool.Parent = backpack
 		print("[CHARA] Awakening finished!")
